@@ -35,13 +35,13 @@ async function routeRequest(request, env) {
   if (request.method === "GET" && path === "/main") {
     requireToken(url, env);
     const config = await loadConfig(env);
-    return proxyText(config.MAIN_SUB_URL, request);
+    return convertToClashProvider(config.MAIN_SUB_URL, request);
   }
 
   if (request.method === "GET" && path === "/bootstrap") {
     requireToken(url, env);
     const config = await loadConfig(env);
-    return proxyText(config.BOOTSTRAP_SUB_URL, request);
+    return convertToClashProvider(config.BOOTSTRAP_SUB_URL, request);
   }
 
   if (request.method === "GET" && path === "/rules/home-secret") {
@@ -426,6 +426,267 @@ async function handleRequestWithErrors(request, env) {
     console.error(error);
     return textResponse("Internal Server Error", 500);
   }
+}
+
+async function convertToClashProvider(target, request) {
+  try {
+    target = requiredEnv(target, "target url");
+    const upstream = await fetch(target, {
+      method: "GET",
+      headers: forwardHeaders(request.headers),
+      cf: { cacheTtl: 0, cacheEverything: false },
+    });
+
+    if (!upstream.ok) {
+      throw new HttpError(`Upstream fetch failed: ${upstream.status}`, 502);
+    }
+
+    const text = await upstream.text();
+
+    // Check if already Clash YAML format
+    if (text.trim().startsWith("proxies:")) {
+      const headers = new Headers();
+      headers.set("content-type", "text/yaml; charset=utf-8");
+      headers.set("cache-control", "no-store");
+      return new Response(text, { status: 200, headers });
+    }
+
+    // Convert proxy URI list to Clash YAML
+    const proxyURIs = extractProxyURILines(text);
+    const yaml = buildClashYAML(proxyURIs);
+
+    const headers = new Headers();
+    headers.set("content-type", "text/yaml; charset=utf-8");
+    headers.set("cache-control", "no-store");
+    return new Response(yaml, { status: 200, headers });
+  } catch (error) {
+    console.error("convertToClashProvider error:", error);
+    throw error;
+  }
+}
+
+function buildClashYAML(proxyURIs) {
+  const proxies = [];
+
+  for (const uri of proxyURIs) {
+    try {
+      const proxy = parseProxyURIToClash(uri);
+      if (proxy) {
+        proxies.push(proxy);
+      }
+    } catch (e) {
+      // Skip unparseable nodes, don't crash
+      console.error("Failed to parse proxy URI:", uri.substring(0, 50), e.message);
+    }
+  }
+
+  if (proxies.length === 0) {
+    return "proxies: []";
+  }
+
+  // Build YAML manually to avoid external dependencies
+  let yaml = "proxies:\n";
+  for (const proxy of proxies) {
+    yaml += "  - name: " + JSON.stringify(proxy.name) + "\n";
+    yaml += "    type: " + proxy.type + "\n";
+    yaml += "    server: " + proxy.server + "\n";
+    yaml += "    port: " + proxy.port + "\n";
+
+    // Add protocol-specific fields
+    for (const [key, value] of Object.entries(proxy)) {
+      if (["name", "type", "server", "port"].includes(key)) continue;
+      if (value === undefined || value === null) continue;
+
+      if (typeof value === "object") {
+        yaml += "    " + key + ":\n";
+        for (const [k, v] of Object.entries(value)) {
+          yaml += "      " + k + ": " + JSON.stringify(v) + "\n";
+        }
+      } else {
+        yaml += "    " + key + ": " + JSON.stringify(value) + "\n";
+      }
+    }
+  }
+
+  return yaml;
+}
+
+function parseProxyURIToClash(uri) {
+  // Simple parser with error handling for each protocol
+  if (uri.startsWith("ss://")) {
+    return parseSS(uri);
+  } else if (uri.startsWith("vmess://")) {
+    return parseVMess(uri);
+  } else if (uri.startsWith("vless://")) {
+    return parseVLess(uri);
+  } else if (uri.startsWith("trojan://")) {
+    return parseTrojan(uri);
+  } else if (uri.startsWith("hysteria2://") || uri.startsWith("hy2://")) {
+    return parseHysteria2(uri);
+  }
+
+  return null;
+}
+
+function parseSS(uri) {
+  const url = new URL(uri);
+  const name = decodeURIComponent(url.hash.slice(1)) || url.hostname;
+
+  // Try to decode userinfo
+  let method = "aes-256-gcm";
+  let password = "";
+
+  try {
+    const userinfo = url.username ? atob(url.username) : atob(uri.split("@")[0].replace("ss://", ""));
+    const parts = userinfo.split(":");
+    if (parts.length >= 2) {
+      method = parts[0];
+      password = parts.slice(1).join(":");
+    }
+  } catch (e) {
+    // If decode fails, skip this node
+    return null;
+  }
+
+  return {
+    name,
+    type: "ss",
+    server: url.hostname,
+    port: parseInt(url.port) || 8388,
+    cipher: method,
+    password: password,
+  };
+}
+
+function parseVMess(uri) {
+  try {
+    const json = JSON.parse(atob(uri.replace("vmess://", "")));
+    const proxy = {
+      name: json.ps || json.add || "VMess",
+      type: "vmess",
+      server: json.add,
+      port: parseInt(json.port),
+      uuid: json.id,
+      alterId: parseInt(json.aid || 0),
+      cipher: json.scy || "auto",
+    };
+
+    if (json.net && json.net !== "tcp") {
+      proxy.network = json.net;
+    }
+    if (json.tls === "tls") {
+      proxy.tls = true;
+    }
+    if (json.net === "ws") {
+      proxy["ws-opts"] = {
+        path: json.path || "/",
+      };
+      if (json.host) {
+        proxy["ws-opts"].headers = { Host: json.host };
+      }
+    }
+
+    return proxy;
+  } catch (e) {
+    return null;
+  }
+}
+
+function parseVLess(uri) {
+  const url = new URL(uri);
+  const params = Object.fromEntries(url.searchParams);
+  const name = decodeURIComponent(url.hash.slice(1)) || url.hostname;
+
+  const proxy = {
+    name,
+    type: "vless",
+    server: url.hostname,
+    port: parseInt(url.port),
+    uuid: url.username,
+  };
+
+  if (params.type && params.type !== "tcp") {
+    proxy.network = params.type;
+  }
+  if (params.security === "tls" || params.security === "reality") {
+    proxy.tls = true;
+  }
+  if (params.flow) {
+    proxy.flow = params.flow;
+  }
+  if (params.type === "ws") {
+    proxy["ws-opts"] = {
+      path: params.path || "/",
+    };
+    if (params.host) {
+      proxy["ws-opts"].headers = { Host: params.host };
+    }
+  }
+  if (params.security === "reality" && params.pbk) {
+    proxy["reality-opts"] = {
+      "public-key": params.pbk,
+    };
+    if (params.sid) {
+      proxy["reality-opts"]["short-id"] = params.sid;
+    }
+  }
+  if (params.sni) {
+    proxy.servername = params.sni;
+  }
+
+  return proxy;
+}
+
+function parseTrojan(uri) {
+  const url = new URL(uri);
+  const params = Object.fromEntries(url.searchParams);
+  const name = decodeURIComponent(url.hash.slice(1)) || url.hostname;
+
+  const proxy = {
+    name,
+    type: "trojan",
+    server: url.hostname,
+    port: parseInt(url.port),
+    password: url.username,
+  };
+
+  if (params.sni) {
+    proxy.sni = params.sni;
+  }
+  if (params.allowInsecure === "1") {
+    proxy["skip-cert-verify"] = true;
+  }
+  if (params.type === "ws") {
+    proxy.network = "ws";
+    proxy["ws-opts"] = {
+      path: params.path || "/",
+    };
+  }
+
+  return proxy;
+}
+
+function parseHysteria2(uri) {
+  const url = new URL(uri.replace("hy2://", "hysteria2://"));
+  const params = Object.fromEntries(url.searchParams);
+  const name = decodeURIComponent(url.hash.slice(1)) || url.hostname;
+
+  const proxy = {
+    name,
+    type: "hysteria2",
+    server: url.hostname,
+    port: parseInt(url.port),
+    password: url.username,
+  };
+
+  if (params.sni) {
+    proxy.sni = params.sni;
+  }
+  if (params.insecure === "1") {
+    proxy["skip-cert-verify"] = true;
+  }
+
+  return proxy;
 }
 
 export { handleRequestWithErrors as handleRequest };
