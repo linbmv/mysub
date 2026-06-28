@@ -146,9 +146,9 @@ async function buildShadowrocketSubscription(config, env) {
 
   // Build Shadowrocket subscription format:
   // 1. Proxy URIs (one per line)
-  // 2. Empty line
+  // 2. Separator comment
   // 3. Configuration sections ([General], [Proxy Group], [Rule], etc.)
-  const subscription = proxyURIList + "\n\n" + configWithoutProxySection.trim();
+  const subscription = proxyURIList + "\n\n# Shadowrocket Config\n\n" + configWithoutProxySection.trim();
 
   return subscription;
 }
