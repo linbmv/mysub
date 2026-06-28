@@ -5,3 +5,13 @@ compatibility_date = "2026-06-28"
 kv_namespaces = [
   { binding = "SUB_KV", id = "b2eb7d7284e94ecbbac5d809ad2ef49d" }
 ]
+
+# Environment variables - set actual values in Cloudflare Dashboard
+# Dashboard: Workers & Pages > mysub > Settings > Variables and Secrets
+[vars]
+# MAIN_SUB_URL = ""           # Required: main subscription URL
+# BOOTSTRAP_SUB_URL = ""      # Optional: bootstrap subscription URL
+# HOME_SECRET_RULE_URL = ""   # Optional: home-secret rule URL
+# SENSITIVE_RULE_URL = ""     # Optional: sensitive rule URL
+# ALLOWED_TOKENS = ""         # Optional: comma-separated allowed tokens
+# PUBLIC_BASE_URL = ""        # Optional: defaults to request origin
