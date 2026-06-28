@@ -1,0 +1,7 @@
+name = "mysub"
+main = "src/worker.js"
+compatibility_date = "2026-06-28"
+
+kv_namespaces = [
+  { binding = "SUB_KV", id = "replace-in-cloudflare-dashboard" }
+]
