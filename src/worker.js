@@ -571,7 +571,7 @@ function parseVMess(uri) {
       cipher: json.scy || "auto",
     };
 
-    if (json.net && json.net !== "tcp") {
+    if (json.net && json.net !== "tcp" && json.net !== "none") {
       proxy.network = json.net;
     }
     if (json.tls === "tls") {
@@ -605,7 +605,7 @@ function parseVLess(uri) {
     uuid: url.username,
   };
 
-  if (params.type && params.type !== "tcp") {
+  if (params.type && params.type !== "tcp" && params.type !== "none") {
     proxy.network = params.type;
   }
   if (params.security === "tls" || params.security === "reality") {
