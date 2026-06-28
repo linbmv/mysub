@@ -1,0 +1,637 @@
+---
+mode: rule
+log-level: info
+ipv6: false
+allow-lan: true
+bind-address: "*"
+mixed-port: 7890
+redir-port: 7892
+tproxy-port: 7893
+external-ui: "./ui"
+external-controller: 127.0.0.1:9090
+
+profile:
+  store-selected: true
+  store-fake-ip: true
+
+keep-alive-interval: 600
+unified-delay: true
+tcp-concurrent: true
+global-client-fingerprint: chrome
+find-process-mode: strict
+
+geo-auto-update: true
+geo-update-interval: 24
+geodata-mode: true
+geox-url:
+  geoip: https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat
+  geosite: https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geosite.dat
+
+tun:
+  enable: true
+  stack: system
+  auto-route: true
+  auto-redirect: true
+  strict-route: true
+  mtu: 1500
+
+dns:
+  enable: true
+  listen: 0.0.0.0:7874
+  ipv6: false
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  use-hosts: true
+  respect-rules: true
+
+  fake-ip-filter:
+    - "+.lan"
+    - "+.local"
+    - "+.localhost"
+    - "+.home.arpa"
+    - dns.msftncsi.com
+    - www.msftncsi.com
+    - connectivitycheck.gstatic.com
+    - stun.*.*
+    - "*.stun.*"
+    - time.*.com
+    - ntp.*
+    - "+.ntp.org"
+    - "+.pool.ntp.org"
+
+  default-nameserver:
+    - 223.5.5.5
+    - 119.29.29.29
+
+  nameserver:
+    - https://doh.pub/dns-query
+    - https://dns.alidns.com/dns-query
+
+  nameserver-policy:
+    geosite:cn,private:
+      - https://doh.pub/dns-query
+      - https://dns.alidns.com/dns-query
+
+  proxy-server-nameserver:
+    - https://doh.pub/dns-query
+    - https://dns.alidns.com/dns-query
+
+  fallback:
+    - https://cloudflare-dns.com/dns-query#🌐 国际加速
+    - https://dns.google/dns-query#🌐 国际加速
+    - https://1.1.1.1/dns-query#🌐 国际加速
+
+  fallback-filter:
+    geoip: true
+    geoip-code: CN
+    geosite:
+      - geolocation-!cn
+    ipcidr:
+      - 240.0.0.0/4
+
+sniffer:
+  enable: true
+  sniffing:
+    - tls
+    - http
+    - quic
+  force-dns-mapping: true
+  override-destination: true
+  port-whitelist:
+    - 80
+    - 443
+    - 8080
+    - 8443
+
+proxy-providers:
+  Bootstrap:
+    type: http
+    url: BASE_URL/bootstrap?token=DEVICE_TOKEN
+    path: "./providers/bootstrap.yaml"
+    interval: 3600
+    proxy: DIRECT
+    health-check:
+      enable: true
+      url: https://www.gstatic.com/generate_204
+      interval: 300
+      timeout: 5
+      expected-status: 204
+    exclude-filter: "(?i)(过期时间|剩余流量|套餐|官网|TG|群|Traffic|Expire)"
+
+  Main:
+    type: http
+    url: BASE_URL/main?token=DEVICE_TOKEN
+    path: "./providers/main.yaml"
+    interval: 43200
+    proxy: Updater
+    health-check:
+      enable: true
+      url: https://www.gstatic.com/generate_204
+      interval: 600
+      timeout: 5
+      expected-status: 204
+    exclude-filter: "(?i)(过期时间|剩余流量|套餐|官网|TG|群|Traffic|Expire)"
+
+rule-providers:
+  HomeSecret:
+    type: http
+    behavior: classical
+    format: text
+    url: BASE_URL/rules/home-secret?token=DEVICE_TOKEN
+    path: ./rules/home-secret.list
+    interval: 86400
+    proxy: Updater
+
+  Sensitive:
+    type: http
+    behavior: classical
+    format: text
+    url: BASE_URL/rules/sensitive?token=DEVICE_TOKEN
+    path: ./rules/sensitive.list
+    interval: 86400
+    proxy: Updater
+
+  WeChat:
+    type: http
+    behavior: classical
+    format: text
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/WeChat/WeChat.list
+    path: ./rules/wechat.list
+    interval: 86400
+    proxy: Updater
+
+  TencentQQ:
+    type: http
+    behavior: classical
+    format: text
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/TencentQQ/TencentQQ.list
+    path: ./rules/tencentqq.list
+    interval: 86400
+    proxy: Updater
+
+  AdvertisingLite:
+    type: http
+    behavior: classical
+    format: text
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/AdvertisingLite/AdvertisingLite.list
+    path: ./rules/advertising-lite.list
+    interval: 86400
+    proxy: Updater
+
+  OpenAI:
+    type: http
+    behavior: classical
+    format: text
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/OpenAI/OpenAI.list
+    path: ./rules/openai.list
+    interval: 86400
+    proxy: Updater
+
+  ChinaMax:
+    type: http
+    behavior: classical
+    format: text
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/ChinaMax/ChinaMax.list
+    path: ./rules/china-max.list
+    interval: 86400
+    proxy: Updater
+
+  YouTube:
+    type: http
+    behavior: classical
+    format: text
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/YouTube/YouTube.list
+    path: ./rules/youtube.list
+    interval: 86400
+    proxy: Updater
+
+  Netflix:
+    type: http
+    behavior: classical
+    format: text
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/Netflix/Netflix.list
+    path: ./rules/netflix.list
+    interval: 86400
+    proxy: Updater
+
+  Disney:
+    type: http
+    behavior: classical
+    format: text
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/Disney/Disney.list
+    path: ./rules/disney.list
+    interval: 86400
+    proxy: Updater
+
+  TikTok:
+    type: http
+    behavior: classical
+    format: text
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/TikTok/TikTok.list
+    path: ./rules/tiktok.list
+    interval: 86400
+    proxy: Updater
+
+  Spotify:
+    type: http
+    behavior: classical
+    format: text
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/Spotify/Spotify.list
+    path: ./rules/spotify.list
+    interval: 86400
+    proxy: Updater
+
+  Apple:
+    type: http
+    behavior: classical
+    format: text
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/Apple/Apple.list
+    path: ./rules/apple.list
+    interval: 86400
+    proxy: Updater
+
+  Global:
+    type: http
+    behavior: classical
+    format: text
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/Global/Global.list
+    path: ./rules/global.list
+    interval: 86400
+    proxy: Updater
+
+proxy-groups:
+  - name: Updater
+    type: url-test
+    use:
+      - Bootstrap
+    proxies:
+      - DIRECT
+    url: https://www.gstatic.com/generate_204
+    interval: 300
+    tolerance: 100
+    hidden: true
+
+  - name: 🏠 Home节点池
+    type: select
+    use:
+      - Main
+      - Bootstrap
+    filter: "(Home.*✈️EXIT|✈️EXIT.*Home)"
+
+  - name: 🇸🇬 SGP节点池
+    type: select
+    use:
+      - Main
+      - Bootstrap
+    filter: "(sgp|SGP|Singapore|新加坡).*✈️EXIT|✈️EXIT.*(sgp|SGP|Singapore|新加坡)"
+
+  - name: 🇺🇸 USA节点池
+    type: select
+    use:
+      - Main
+      - Bootstrap
+    filter: "(usa|USA|United States|美国).*✈️EXIT|✈️EXIT.*(usa|USA|United States|美国)"
+
+  - name: 🚀 自建节点池
+    type: select
+    use:
+      - Main
+      - Bootstrap
+    filter: "✈️EXIT"
+    exclude-filter: "(Home|WARP|免费)"
+
+  - name: 🚀 自建测速
+    type: url-test
+    use:
+      - Main
+      - Bootstrap
+    filter: "✈️EXIT"
+    exclude-filter: "(Home|WARP|免费)"
+    url: https://www.gstatic.com/generate_204
+    interval: 600
+    tolerance: 150
+    timeout: 8
+
+  - name: 📺 YT自建测速
+    type: url-test
+    use:
+      - Main
+      - Bootstrap
+    filter: "✈️EXIT"
+    exclude-filter: "(Home|WARP|免费)"
+    url: https://www.youtube.com/generate_204
+    interval: 300
+    tolerance: 80
+    timeout: 8
+
+  - name: 🔌 订阅前置池
+    type: url-test
+    use:
+      - Main
+      - Bootstrap
+    filter: "."
+    exclude-filter: "(✈️EXIT|免费)"
+    url: https://www.gstatic.com/generate_204
+    interval: 900
+    tolerance: 200
+    timeout: 10
+    hidden: true
+
+  - name: 🆓 免费前置池
+    type: url-test
+    use:
+      - Main
+      - Bootstrap
+    filter: "免费"
+    exclude-filter: "✈️EXIT"
+    url: https://www.gstatic.com/generate_204
+    interval: 1200
+    tolerance: 300
+    timeout: 12
+    hidden: true
+
+  - name: 🔗 订阅前置自建出口
+    type: fallback
+    use:
+      - Main
+      - Bootstrap
+    filter: "✈️EXIT"
+    exclude-filter: "(Home|WARP|免费)"
+    url: https://www.gstatic.com/generate_204
+    interval: 600
+    timeout: 8
+    lazy: true
+    unified-delay: true
+    dialer-proxy: 🔌 订阅前置池
+
+  - name: 🆓 免费前置自建出口
+    type: fallback
+    use:
+      - Main
+      - Bootstrap
+    filter: "✈️EXIT"
+    exclude-filter: "(Home|WARP|免费)"
+    url: https://www.gstatic.com/generate_204
+    interval: 900
+    timeout: 10
+    lazy: true
+    unified-delay: true
+    dialer-proxy: 🆓 免费前置池
+
+  - name: 🔐 订阅前置SGP出口
+    type: fallback
+    use:
+      - Main
+      - Bootstrap
+    filter: "(sgp|SGP|Singapore|新加坡).*✈️EXIT|✈️EXIT.*(sgp|SGP|Singapore|新加坡)"
+    url: https://www.gstatic.com/generate_204
+    interval: 600
+    timeout: 10
+    lazy: true
+    dialer-proxy: 🔌 订阅前置池
+
+  - name: 🆓 免费前置SGP出口
+    type: fallback
+    use:
+      - Main
+      - Bootstrap
+    filter: "(sgp|SGP|Singapore|新加坡).*✈️EXIT|✈️EXIT.*(sgp|SGP|Singapore|新加坡)"
+    url: https://www.gstatic.com/generate_204
+    interval: 900
+    timeout: 12
+    lazy: true
+    dialer-proxy: 🆓 免费前置池
+
+  - name: 🎬 订阅前置USA出口
+    type: fallback
+    use:
+      - Main
+      - Bootstrap
+    filter: "(usa|USA|United States|美国).*✈️EXIT|✈️EXIT.*(usa|USA|United States|美国)"
+    url: https://www.gstatic.com/generate_204
+    interval: 900
+    timeout: 10
+    lazy: true
+    dialer-proxy: 🔌 订阅前置池
+
+  - name: 🆓 免费前置USA出口
+    type: fallback
+    use:
+      - Main
+      - Bootstrap
+    filter: "(usa|USA|United States|美国).*✈️EXIT|✈️EXIT.*(usa|USA|United States|美国)"
+    url: https://www.gstatic.com/generate_204
+    interval: 1200
+    timeout: 12
+    lazy: true
+    dialer-proxy: 🆓 免费前置池
+
+  - name: 🏠 订阅前置Home出口
+    type: fallback
+    use:
+      - Main
+      - Bootstrap
+    filter: "(Home.*✈️EXIT|✈️EXIT.*Home)"
+    url: https://www.gstatic.com/generate_204
+    interval: 900
+    timeout: 10
+    lazy: true
+    dialer-proxy: 🔌 订阅前置池
+
+  - name: 🆓 免费前置Home出口
+    type: fallback
+    use:
+      - Main
+      - Bootstrap
+    filter: "(Home.*✈️EXIT|✈️EXIT.*Home)"
+    url: https://www.gstatic.com/generate_204
+    interval: 1200
+    timeout: 12
+    lazy: true
+    dialer-proxy: 🆓 免费前置池
+
+  - name: EmergencySubExit
+    type: fallback
+    use:
+      - Main
+      - Bootstrap
+    filter: "."
+    exclude-filter: "(✈️EXIT|免费)"
+    url: https://www.gstatic.com/generate_204
+    interval: 900
+    timeout: 10
+    lazy: true
+    hidden: true
+
+  - name: 🌐 国际加速
+    type: fallback
+    proxies:
+      - 🚀 自建测速
+      - 🔗 订阅前置自建出口
+      - 🆓 免费前置自建出口
+      - EmergencySubExit
+    url: https://www.gstatic.com/generate_204
+    interval: 600
+    timeout: 8
+    lazy: true
+    unified-delay: true
+
+  - name: 🔐 敏感专线
+    type: fallback
+    proxies:
+      - 🇸🇬 SGP节点池
+      - 🔐 订阅前置SGP出口
+      - 🆓 免费前置SGP出口
+    url: https://www.gstatic.com/generate_204
+    interval: 600
+    timeout: 10
+    lazy: true
+    unified-delay: true
+
+  - name: 🎬 流媒体
+    type: fallback
+    proxies:
+      - 🇺🇸 USA节点池
+      - 🎬 订阅前置USA出口
+      - 🆓 免费前置USA出口
+      - EmergencySubExit
+    url: https://www.gstatic.com/generate_204
+    interval: 900
+    timeout: 10
+    lazy: true
+    unified-delay: true
+
+  - name: 📺 YouTube
+    type: fallback
+    proxies:
+      - 📺 YT自建测速
+      - 🔗 订阅前置自建出口
+      - 🆓 免费前置自建出口
+      - EmergencySubExit
+    url: https://www.youtube.com/generate_204
+    interval: 300
+    timeout: 8
+    lazy: true
+    unified-delay: true
+
+  - name: 🏠 回家连接
+    type: fallback
+    proxies:
+      - 🏠 Home节点池
+      - 🏠 订阅前置Home出口
+      - 🆓 免费前置Home出口
+    url: https://www.gstatic.com/generate_204
+    interval: 900
+    timeout: 10
+    lazy: true
+    unified-delay: true
+
+  - name: ☁️ WARP出口
+    type: select
+    use:
+      - Main
+      - Bootstrap
+    filter: "(WARP.*✈️EXIT|✈️EXIT.*WARP)"
+
+  - name: 🍎 苹果服务
+    type: select
+    proxies:
+      - DIRECT
+      - 🔐 敏感专线
+      - 🌐 国际加速
+
+  - name: Proxy
+    type: select
+    proxies:
+      - 🌐 国际加速
+      - 🔐 敏感专线
+      - 📺 YouTube
+      - 🎬 流媒体
+      - 🏠 回家连接
+      - 🚀 自建测速
+      - 🔗 订阅前置自建出口
+      - 🆓 免费前置自建出口
+      - EmergencySubExit
+      - DIRECT
+
+rules:
+  - RULE-SET,HomeSecret,🏠 回家连接
+  - IP-CIDR,10.0.0.0/24,🏠 回家连接,no-resolve
+  - IP-CIDR,10.0.10.0/24,🏠 回家连接,no-resolve
+  - IP-CIDR,10.10.10.0/24,🏠 回家连接,no-resolve
+  - DOMAIN,nas.local,🏠 回家连接
+
+  - DOMAIN-SUFFIX,local,DIRECT
+  - GEOIP,private,DIRECT,no-resolve
+  - GEOSITE,private,DIRECT
+
+  - RULE-SET,WeChat,DIRECT
+  - RULE-SET,TencentQQ,DIRECT
+  - DOMAIN-SUFFIX,weixin.qq.com,DIRECT
+  - DOMAIN-SUFFIX,wechat.com,DIRECT
+  - DOMAIN-SUFFIX,wx.qq.com,DIRECT
+  - DOMAIN-SUFFIX,qq.com,DIRECT
+  - DOMAIN-SUFFIX,qpic.cn,DIRECT
+  - DOMAIN-SUFFIX,gtimg.cn,DIRECT
+  - DOMAIN-SUFFIX,idqqimg.com,DIRECT
+  - DOMAIN-SUFFIX,qlogo.cn,DIRECT
+  - DOMAIN-SUFFIX,myqcloud.com,DIRECT
+  - DOMAIN-SUFFIX,tencent.com,DIRECT
+  - DOMAIN-SUFFIX,tenpay.com,DIRECT
+  - DOMAIN-SUFFIX,midas.qq.com,DIRECT
+  - DOMAIN-SUFFIX,servicewechat.com,DIRECT
+  - IP-CIDR,101.226.0.0/16,DIRECT,no-resolve
+
+  - RULE-SET,AdvertisingLite,REJECT
+  - GEOSITE,category-ads-all,REJECT
+
+  - RULE-SET,Sensitive,🔐 敏感专线
+  - RULE-SET,OpenAI,🔐 敏感专线
+  - DOMAIN-SUFFIX,openai.com,🔐 敏感专线
+  - DOMAIN-SUFFIX,chatgpt.com,🔐 敏感专线
+  - DOMAIN-SUFFIX,auth0.com,🔐 敏感专线
+  - DOMAIN-SUFFIX,anthropic.com,🔐 敏感专线
+  - DOMAIN-SUFFIX,claude.ai,🔐 敏感专线
+
+  - DOMAIN-SUFFIX,accounts.google.com,🔐 敏感专线
+  - DOMAIN-SUFFIX,myaccount.google.com,🔐 敏感专线
+  - DOMAIN-SUFFIX,payments.google.com,🔐 敏感专线
+  - DOMAIN-SUFFIX,oauth2.googleapis.com,🔐 敏感专线
+  - DOMAIN-SUFFIX,securetoken.googleapis.com,🔐 敏感专线
+
+  - DOMAIN-SUFFIX,appleid.apple.com,🔐 敏感专线
+  - DOMAIN-SUFFIX,idmsa.apple.com,🔐 敏感专线
+  - DOMAIN-SUFFIX,gsa.apple.com,🔐 敏感专线
+  - DOMAIN-SUFFIX,setup.icloud.com,🔐 敏感专线
+
+  - DOMAIN-SUFFIX,login.microsoftonline.com,🔐 敏感专线
+  - DOMAIN-SUFFIX,account.microsoft.com,🔐 敏感专线
+  - DOMAIN-SUFFIX,account.live.com,🔐 敏感专线
+  - DOMAIN-SUFFIX,login.live.com,🔐 敏感专线
+  - DOMAIN-SUFFIX,msauth.net,🔐 敏感专线
+  - DOMAIN-SUFFIX,msftauth.net,🔐 敏感专线
+
+  - DOMAIN-SUFFIX,github.com,🔐 敏感专线
+  - DOMAIN-SUFFIX,github.dev,🔐 敏感专线
+  - DOMAIN-SUFFIX,githubassets.com,🌐 国际加速
+  - DOMAIN-SUFFIX,githubusercontent.com,🌐 国际加速
+  - DOMAIN-SUFFIX,github.io,🌐 国际加速
+
+  - RULE-SET,ChinaMax,DIRECT
+  - GEOSITE,cn,DIRECT
+  - GEOIP,CN,DIRECT,no-resolve
+
+  - RULE-SET,YouTube,📺 YouTube
+  - RULE-SET,Netflix,🎬 流媒体
+  - RULE-SET,Disney,🎬 流媒体
+  - RULE-SET,TikTok,🎬 流媒体
+  - RULE-SET,Spotify,🎬 流媒体
+
+  - RULE-SET,Apple,🍎 苹果服务
+  - RULE-SET,Global,🌐 国际加速
+
+  - AND,((NETWORK,UDP),(DST-PORT,443)),REJECT
+
+  - GEOSITE,gfw,🌐 国际加速
+  - GEOSITE,geolocation-!cn,🌐 国际加速
+  - MATCH,🌐 国际加速

@@ -1,0 +1,19 @@
+name = "mysub"
+main = "src/worker.js"
+compatibility_date = "2026-06-28"
+
+kv_namespaces = [
+  { binding = "SUB_KV", id = "replace-with-production-kv-id", preview_id = "replace-with-preview-kv-id" }
+]
+
+[vars]
+PUBLIC_BASE_URL = "https://sub.example.com"
+MAIN_SUB_URL = "https://example.com/main-subscription"
+BOOTSTRAP_SUB_URL = "https://example.com/bootstrap-subscription"
+HOME_SECRET_RULE_URL = "https://example.com/home-secret.list"
+SENSITIVE_RULE_URL = "https://example.com/sensitive.list"
+# Optional comma-separated allowlist. Empty or omitted means any token is accepted.
+ALLOWED_TOKENS = "dev_iphone_xxx,macbook_xxx"
+
+# Set as secret, not plain text:
+# wrangler secret put ADMIN_SECRET
