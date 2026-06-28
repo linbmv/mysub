@@ -140,7 +140,7 @@ rule-providers:
     url: BASE_URL/rules/home-secret?token=DEVICE_TOKEN
     path: ./rules/home-secret.list
     interval: 86400
-    proxy: Updater
+    proxy: DIRECT
 
   Sensitive:
     type: http
@@ -149,7 +149,7 @@ rule-providers:
     url: BASE_URL/rules/sensitive?token=DEVICE_TOKEN
     path: ./rules/sensitive.list
     interval: 86400
-    proxy: Updater
+    proxy: DIRECT
 
   WeChat:
     type: http
