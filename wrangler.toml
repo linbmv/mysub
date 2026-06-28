@@ -3,5 +3,5 @@ main = "src/worker.js"
 compatibility_date = "2026-06-28"
 
 kv_namespaces = [
-  { binding = "SUB_KV", id = "replace-in-cloudflare-dashboard" }
+  { binding = "SUB_KV", id = "b2eb7d7284e94ecbbac5d809ad2ef49d" }
 ]
