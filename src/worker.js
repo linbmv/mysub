@@ -83,11 +83,72 @@ async function getConfig(url, env) {
   }
 
   const baseURL = publicBaseURL(url, env);
-  const body = template
+  let body = template
     .replaceAll("BASE_URL", baseURL)
     .replaceAll("DEVICE_TOKEN", token);
 
+  if (type === "shadowrocket") {
+    body = await injectShadowrocketMainSub(body, env);
+  }
+
   return configResponse(body, type, true);
+}
+
+async function injectShadowrocketMainSub(config, env) {
+  if (!config.includes("MAIN_SUB_PROXIES")) {
+    return config;
+  }
+
+  const proxies = await fetchProxyURIList(env.MAIN_SUB_URL);
+  return config.replaceAll("MAIN_SUB_PROXIES", proxies || "# MAIN_SUB_URL returned no supported proxy lines");
+}
+
+async function fetchProxyURIList(target) {
+  const upstream = await fetch(requiredEnv(target, "MAIN_SUB_URL"), {
+    method: "GET",
+    headers: { accept: "text/plain,*/*" },
+    cf: { cacheTtl: 0, cacheEverything: false },
+  });
+
+  if (!upstream.ok) {
+    throw new HttpError(`MAIN_SUB_URL fetch failed: ${upstream.status}`, 502);
+  }
+
+  const text = await upstream.text();
+  return extractProxyURILines(text).join("\n");
+}
+
+function extractProxyURILines(text) {
+  const decoded = maybeBase64Decode(text);
+  const lines = decoded
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  return lines.filter(isProxyURI);
+}
+
+function maybeBase64Decode(text) {
+  const compact = text.trim().replace(/\s+/g, "");
+  if (!compact || /^(ss|ssr|vmess|vless|trojan|hysteria2|hy2|tuic|wireguard):\/\//i.test(text.trim())) {
+    return text;
+  }
+
+  try {
+    const normalized = compact.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    const decoded = atob(padded);
+    if (/^(ss|ssr|vmess|vless|trojan|hysteria2|hy2|tuic|wireguard):\/\//im.test(decoded)) {
+      return decoded;
+    }
+  } catch (_) {
+  }
+
+  return text;
+}
+
+function isProxyURI(line) {
+  return /^(ss|ssr|vmess|vless|trojan|hysteria2|hy2|tuic|wireguard):\/\//i.test(line);
 }
 
 async function updateTemplate(request, env) {
