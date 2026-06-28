@@ -28,6 +28,10 @@ async function routeRequest(request, env) {
     return getConfig(url, env);
   }
 
+  if (request.method === "GET" && path === "/sr-config") {
+    return getShadowrocketConfig(url, env);
+  }
+
   if (request.method === "GET" && path === "/main") {
     requireToken(url, env);
     const config = await loadConfig(env);
@@ -110,6 +114,26 @@ async function getConfig(url, env) {
   }
 
   return configResponse(body, type, true);
+}
+
+async function getShadowrocketConfig(url, env) {
+  const token = requireToken(url, env);
+  await checkAllowedToken(token, env);
+
+  const template = await env.SUB_KV.get(TEMPLATE_KEYS.shadowrocket);
+  if (!template) {
+    return textResponse(`Shadowrocket config template is not configured`, 500);
+  }
+
+  const config = await loadConfig(env);
+  const baseURL = config.PUBLIC_BASE_URL || url.origin;
+
+  // Return pure config without node section
+  let body = template
+    .replaceAll("BASE_URL", baseURL)
+    .replaceAll("DEVICE_TOKEN", token);
+
+  return configResponse(body, "shadowrocket", true);
 }
 
 async function buildShadowrocketSubscription(config, env) {
