@@ -4,6 +4,39 @@ Cloudflare Worker subscription gateway for Clash/Mihomo and Shadowrocket templat
 
 完整部署、更新、验证和回滚步骤见 [DEPLOY.md](./DEPLOY.md)。
 
+## Quick Start
+
+1. Deploy to Cloudflare Workers
+2. Set `ADMIN_SECRET` as a Secret in Cloudflare Dashboard
+3. Upload configuration:
+   ```bash
+   ./scripts/upload-config.sh https://your-worker.workers.dev 'your-admin-secret'
+   ```
+4. Upload templates:
+   ```bash
+   ./scripts/upload-templates.sh https://your-worker.workers.dev 'your-admin-secret'
+   ```
+
+## Configuration
+
+All configuration is stored in KV (not environment variables). Use `/admin/config` to manage:
+
+```bash
+curl -X POST https://your-worker.workers.dev/admin/config \
+  -H "Content-Type: application/json" \
+  -d '{
+    "admin": "your-admin-secret",
+    "MAIN_SUB_URL": "https://your-main-subscription-url",
+    "BOOTSTRAP_SUB_URL": "https://your-bootstrap-url",
+    "HOME_SECRET_RULE_URL": "https://your-home-rule-url",
+    "SENSITIVE_RULE_URL": "https://your-sensitive-rule-url",
+    "ALLOWED_TOKENS": "token1,token2,token3",
+    "PUBLIC_BASE_URL": "https://your-custom-domain.com"
+  }'
+```
+
+Or use the interactive script: `./scripts/upload-config.sh`
+
 ## Config review
 
 ### `clash.yaml`
