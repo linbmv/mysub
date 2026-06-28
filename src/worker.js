@@ -115,18 +115,11 @@ async function getConfig(url, env) {
 async function buildShadowrocketSubscription(config, env) {
   // Fetch proxy nodes
   const settings = await loadConfig(env);
-  const proxyURIs = await fetchProxyURIList(settings.MAIN_SUB_URL);
+  const proxyURIList = await fetchProxyURIList(settings.MAIN_SUB_URL);
 
-  // Remove [Proxy] section placeholder from config
-  const configWithoutProxySection = config.replace(/\[Proxy\][^\[]*/, '');
-
-  // Build Shadowrocket subscription format:
-  // 1. Proxy URIs (one per line)
-  // 2. Empty line
-  // 3. Configuration sections
-  const subscription = proxyURIs + "\n\n" + configWithoutProxySection.trim();
-
-  return subscription;
+  // Shadowrocket subscription: just return the proxy URIs
+  // The config template is not used for subscription format
+  return proxyURIList;
 }
 
 async function injectShadowrocketMainSub(config, env) {
