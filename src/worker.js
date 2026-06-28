@@ -110,7 +110,7 @@ async function getConfig(url, env) {
     .replaceAll("DEVICE_TOKEN", token);
 
   if (type === "shadowrocket") {
-    body = await buildShadowrocketSubscription(body, env);
+    body = await injectShadowrocketMainSub(body, env);
   }
 
   return configResponse(body, type, true);
@@ -136,6 +136,16 @@ async function getShadowrocketConfig(url, env) {
   return configResponse(body, "shadowrocket", true);
 }
 
+async function injectShadowrocketMainSub(config, env) {
+  if (!config.includes("MAIN_SUB_PROXIES")) {
+    return config;
+  }
+
+  const settings = await loadConfig(env);
+  const proxies = await fetchProxyURIList(settings.MAIN_SUB_URL);
+  return config.replaceAll("MAIN_SUB_PROXIES", proxies || "# MAIN_SUB_URL returned no supported proxy lines");
+}
+
 async function buildShadowrocketSubscription(config, env) {
   // Fetch proxy nodes
   const settings = await loadConfig(env);
@@ -151,16 +161,6 @@ async function buildShadowrocketSubscription(config, env) {
   const subscription = proxyURIList + "\n\n# Shadowrocket Config\n\n" + configWithoutProxySection.trim();
 
   return subscription;
-}
-
-async function injectShadowrocketMainSub(config, env) {
-  if (!config.includes("MAIN_SUB_PROXIES")) {
-    return config;
-  }
-
-  const settings = await loadConfig(env);
-  const proxies = await fetchProxyURIList(settings.MAIN_SUB_URL);
-  return config.replaceAll("MAIN_SUB_PROXIES", proxies || "# MAIN_SUB_URL returned no supported proxy lines");
 }
 
 async function fetchProxyURIList(target) {
