@@ -6,7 +6,7 @@
 
 - 模板文件存在 KV，不需要每次改模板都重新部署 Worker。
 - 客户端只使用固定链接 `/config?...`。
-- Worker 在返回配置时注入 `PUBLIC_BASE_URL` 和客户端 `token`。
+- Worker 在返回配置时注入公开访问地址和客户端 `token`。
 - Worker 同时反代真实订阅与私有规则，避免真实订阅地址直接暴露给客户端配置文件。
 
 ## 文件说明
@@ -74,6 +74,7 @@ kv_namespaces = [
 ]
 
 [vars]
+# Optional. If omitted, the Worker uses the current request origin.
 PUBLIC_BASE_URL = "https://sub.example.com"
 MAIN_SUB_URL = "https://真实主订阅地址"
 BOOTSTRAP_SUB_URL = "https://真实 bootstrap 订阅地址"
@@ -84,7 +85,7 @@ ALLOWED_TOKENS = "dev_iphone_xxx,macbook_xxx"
 
 说明：
 
-- `PUBLIC_BASE_URL`：客户端访问 Worker 的公开域名，不要带结尾 `/`。
+- `PUBLIC_BASE_URL`：可选。客户端访问 Worker 的公开域名，不要带结尾 `/`。留空或不配置时，Worker 使用当前请求的 origin。
 - `MAIN_SUB_URL`：真实主订阅地址，只保存在 Worker 环境变量里。
 - `BOOTSTRAP_SUB_URL`：真实 bootstrap 订阅地址。
 - `HOME_SECRET_RULE_URL`：私有 Home 规则地址。

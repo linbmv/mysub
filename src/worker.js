@@ -82,7 +82,7 @@ async function getConfig(url, env) {
     return textResponse(`Config template is not configured: ${type}`, 500);
   }
 
-  const baseURL = requiredEnv(env.PUBLIC_BASE_URL, "PUBLIC_BASE_URL").replace(/\/$/, "");
+  const baseURL = publicBaseURL(url, env);
   const body = template
     .replaceAll("BASE_URL", baseURL)
     .replaceAll("DEVICE_TOKEN", token);
@@ -234,6 +234,10 @@ function requiredEnv(value, name) {
     throw new HttpError(`${name} is not configured`, 500);
   }
   return value;
+}
+
+function publicBaseURL(url, env) {
+  return String(env.PUBLIC_BASE_URL || url.origin).replace(/\/$/, "");
 }
 
 function parseCSV(value) {

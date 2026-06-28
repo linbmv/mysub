@@ -84,7 +84,7 @@ KV keys:
 
    Set:
 
-   - `PUBLIC_BASE_URL`
+   - optional `PUBLIC_BASE_URL`
    - `MAIN_SUB_URL`
    - `BOOTSTRAP_SUB_URL`
    - `HOME_SECRET_RULE_URL`
