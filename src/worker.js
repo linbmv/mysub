@@ -7,7 +7,7 @@ const DEFAULT_TYPE = "clash";
 
 export default {
   async fetch(request, env) {
-    return handleRequest(request, env);
+    return handleRequestWithErrors(request, env);
   },
 };
 
