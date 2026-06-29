@@ -135,10 +135,17 @@ async function fetchProxyURIList(target) {
 }
 
 function extractProxyURILines(text) {
-  return maybeBase64Decode(text)
+  const decoded = maybeBase64Decode(text);
+  const uriLines = decoded
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(isProxyURI);
+
+  if (uriLines.length > 0) {
+    return uriLines;
+  }
+
+  return extractClashProxyLines(decoded);
 }
 
 function maybeBase64Decode(text) {
@@ -162,6 +169,108 @@ function maybeBase64Decode(text) {
 
 function isProxyURI(line) {
   return /^(ss|ssr|vmess|vless|trojan|hysteria2|hy2|tuic|wireguard):\/\//i.test(line);
+}
+
+function extractClashProxyLines(text) {
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("- {") || line.startsWith("-{"))
+    .map((line) => line.slice(line.indexOf("{")))
+    .map(parseJSONProxy)
+    .filter(Boolean)
+    .map(clashProxyToShadowrocket)
+    .filter(Boolean);
+}
+
+function parseJSONProxy(text) {
+  try {
+    return JSON.parse(text);
+  } catch (_) {
+    return null;
+  }
+}
+
+function clashProxyToShadowrocket(proxy) {
+  const type = String(proxy.type || "").toLowerCase();
+  if (!proxy.name || !proxy.server || !proxy.port) {
+    return "";
+  }
+
+  if (type === "ss") {
+    return shadowrocketLine(proxy.name, "ss", proxy.server, proxy.port, {
+      "encrypt-method": proxy.cipher,
+      password: proxy.password,
+      "udp-relay": proxy.udp,
+    });
+  }
+
+  if (type === "vmess") {
+    return shadowrocketLine(proxy.name, "vmess", proxy.server, proxy.port, {
+      method: proxy.cipher || "auto",
+      password: proxy.uuid,
+      obfs: proxy.network === "ws" ? "websocket" : undefined,
+      "obfs-host": proxy["ws-opts"]?.headers?.Host,
+      "obfs-uri": proxy["ws-opts"]?.path,
+      tls: Boolean(proxy.tls),
+      "skip-cert-verify": proxy["skip-cert-verify"],
+    });
+  }
+
+  if (type === "vless") {
+    return shadowrocketLine(proxy.name, "vless", proxy.server, proxy.port, {
+      password: proxy.uuid,
+      method: "none",
+      obfs: proxy.network === "ws" ? "websocket" : undefined,
+      "obfs-host": proxy["ws-opts"]?.headers?.Host,
+      "obfs-uri": proxy["ws-opts"]?.path,
+      tls: Boolean(proxy.tls),
+      "skip-cert-verify": proxy["skip-cert-verify"],
+    });
+  }
+
+  if (type === "trojan") {
+    return shadowrocketLine(proxy.name, "trojan", proxy.server, proxy.port, {
+      password: proxy.password,
+      sni: proxy.sni || proxy.servername,
+      "skip-cert-verify": proxy["skip-cert-verify"],
+    });
+  }
+
+  if (type === "hysteria2") {
+    return shadowrocketLine(proxy.name, "hysteria2", proxy.server, proxy.port, {
+      password: proxy.password || proxy.auth,
+      sni: proxy.sni,
+      "skip-cert-verify": proxy["skip-cert-verify"],
+    });
+  }
+
+  if (type === "http") {
+    return shadowrocketLine(proxy.name, "http", proxy.server, proxy.port, {
+      username: proxy.username,
+      password: proxy.password,
+    });
+  }
+
+  return "";
+}
+
+function shadowrocketLine(name, type, server, port, options) {
+  const parts = [`${name} = ${type}`, String(server), String(port)];
+  for (const [key, value] of Object.entries(options)) {
+    if (value === undefined || value === null || value === "") {
+      continue;
+    }
+    parts.push(`${key}=${formatShadowrocketValue(value)}`);
+  }
+  return parts.join(", ");
+}
+
+function formatShadowrocketValue(value) {
+  if (typeof value === "boolean") {
+    return value ? "true" : "false";
+  }
+  return String(value).replaceAll(",", "%2C");
 }
 
 async function updateTemplate(request, env) {
