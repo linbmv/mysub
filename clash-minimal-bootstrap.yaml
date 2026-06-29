@@ -1,0 +1,29 @@
+---
+mode: rule
+log-level: info
+mixed-port: 7890
+allow-lan: false
+ipv6: false
+
+proxy-providers:
+  Bootstrap:
+    type: http
+    url: "BASE_URL/bootstrap?token=DEVICE_TOKEN"
+    path: ./providers/bootstrap.yaml
+    interval: 3600
+    proxy: DIRECT
+    health-check:
+      enable: true
+      url: "https://www.gstatic.com/generate_204"
+      interval: 300
+
+proxy-groups:
+  - name: Proxy
+    type: select
+    use:
+      - Bootstrap
+    proxies:
+      - DIRECT
+
+rules:
+  - MATCH,Proxy
