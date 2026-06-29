@@ -115,7 +115,12 @@ async function injectShadowrocketMainSub(template, config) {
   }
 
   const proxies = await fetchProxyURIList(config.MAIN_SUB_URL);
-  return template.replaceAll("MAIN_SUB_PROXIES", proxies || "# MAIN_SUB_URL returned no supported proxy lines");
+  if (!proxies) {
+    return template.replaceAll("MAIN_SUB_PROXIES", "# MAIN_SUB_URL returned no supported proxy lines");
+  }
+
+  const configBody = template.replaceAll("MAIN_SUB_PROXIES", proxies);
+  return `${proxies}\n\n${configBody}`;
 }
 
 async function fetchProxyURIList(target) {
