@@ -443,16 +443,37 @@ async function convertToClashProvider(target, request) {
 
     const text = await upstream.text();
 
-    // Check if already Clash YAML format
-    if (text.trim().startsWith("proxies:")) {
-      const headers = new Headers();
-      headers.set("content-type", "text/yaml; charset=utf-8");
-      headers.set("cache-control", "no-store");
-      return new Response(text, { status: 200, headers });
+    // Always parse and filter, even if it's already Clash YAML format
+    // This ensures we filter out invalid fields like network:"none"
+    const proxyURIs = extractProxyURILines(text);
+
+    // If no proxy URIs found, try to extract from existing Clash YAML
+    if (proxyURIs.length === 0 && text.includes("proxies:")) {
+      // Extract JSON-format proxies from YAML
+      const lines = text.split("\n");
+      const yamlProxies = [];
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith("- {") || trimmed.startsWith("-{")) {
+          try {
+            const jsonStr = trimmed.substring(trimmed.indexOf("{"));
+            const proxy = JSON.parse(jsonStr);
+            yamlProxies.push(cleanupClashProxy(proxy));
+          } catch (e) {
+            // Skip invalid JSON
+          }
+        }
+      }
+
+      if (yamlProxies.length > 0) {
+        const yaml = buildClashYAMLFromObjects(yamlProxies);
+        const headers = new Headers();
+        headers.set("content-type", "text/yaml; charset=utf-8");
+        headers.set("cache-control", "no-store");
+        return new Response(yaml, { status: 200, headers });
+      }
     }
 
-    // Convert proxy URI list to Clash YAML
-    const proxyURIs = extractProxyURILines(text);
     const yaml = buildClashYAML(proxyURIs);
 
     const headers = new Headers();
@@ -480,6 +501,10 @@ function buildClashYAML(proxyURIs) {
     }
   }
 
+  return buildClashYAMLFromObjects(proxies);
+}
+
+function buildClashYAMLFromObjects(proxies) {
   if (proxies.length === 0) {
     return "proxies: []";
   }
@@ -509,6 +534,18 @@ function buildClashYAML(proxyURIs) {
   }
 
   return yaml;
+}
+
+function cleanupClashProxy(proxy) {
+  // Remove invalid fields
+  const cleaned = { ...proxy };
+
+  // Filter out network:"none" and network:"tcp" (defaults)
+  if (cleaned.network === "none" || cleaned.network === "tcp") {
+    delete cleaned.network;
+  }
+
+  return cleaned;
 }
 
 function parseProxyURIToClash(uri) {
