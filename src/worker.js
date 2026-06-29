@@ -75,6 +75,18 @@ async function routeRequest(request, env) {
     return jsonResponse(await settings(env));
   }
 
+  if (request.method === "GET" && path === "/admin/tokens") {
+    return htmlResponse(tokenAdminPage());
+  }
+
+  if (request.method === "POST" && path === "/admin/token/add") {
+    return addToken(request, env);
+  }
+
+  if (request.method === "POST" && path === "/admin/token/remove") {
+    return removeToken(request, env);
+  }
+
   return textResponse("Not Found", 404);
 }
 
@@ -326,6 +338,42 @@ async function updateConfig(request, env) {
   return jsonResponse({ ok: true });
 }
 
+async function addToken(request, env) {
+  const body = await request.json();
+  requireAdmin(body.admin, env);
+
+  const token = normalizeToken(body.token);
+  if (!token) {
+    return textResponse("token is required", 400);
+  }
+
+  const config = await settings(env);
+  const tokens = parseCSV(config.ALLOWED_TOKENS);
+  if (!tokens.includes(token)) {
+    tokens.push(token);
+  }
+
+  config.ALLOWED_TOKENS = tokens.join(",");
+  await saveSettings(env, config);
+  return jsonResponse({ ok: true, tokens });
+}
+
+async function removeToken(request, env) {
+  const body = await request.json();
+  requireAdmin(body.admin, env);
+
+  const token = normalizeToken(body.token);
+  if (!token) {
+    return textResponse("token is required", 400);
+  }
+
+  const config = await settings(env);
+  const tokens = parseCSV(config.ALLOWED_TOKENS).filter((item) => item !== token);
+  config.ALLOWED_TOKENS = tokens.join(",");
+  await saveSettings(env, config);
+  return jsonResponse({ ok: true, tokens });
+}
+
 async function proxyUpstream(target, request) {
   const upstream = await fetch(requiredEnv(target, "target url"), {
     method: "GET",
@@ -369,6 +417,21 @@ async function settings(env) {
     ALLOWED_TOKENS: env.ALLOWED_TOKENS || stored.ALLOWED_TOKENS || "",
     PUBLIC_BASE_URL: env.PUBLIC_BASE_URL || stored.PUBLIC_BASE_URL || "",
   };
+}
+
+async function saveSettings(env, config) {
+  await env.SUB_KV.put(SETTINGS_KEY, JSON.stringify({
+    MAIN_SUB_URL: config.MAIN_SUB_URL || "",
+    BOOTSTRAP_SUB_URL: config.BOOTSTRAP_SUB_URL || "",
+    HOME_SECRET_RULE_URL: config.HOME_SECRET_RULE_URL || "",
+    SENSITIVE_RULE_URL: config.SENSITIVE_RULE_URL || "",
+    ALLOWED_TOKENS: config.ALLOWED_TOKENS || "",
+    PUBLIC_BASE_URL: config.PUBLIC_BASE_URL || "",
+  }, null, 2));
+}
+
+function normalizeToken(token) {
+  return String(token || "").trim();
 }
 
 async function checkToken(url, env) {
@@ -461,6 +524,17 @@ function configResponse(body, type, privateResponse) {
   return new Response(body, { status: 200, headers });
 }
 
+function htmlResponse(body, status = 200) {
+  return new Response(body, {
+    status,
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "no-store",
+      "x-content-type-options": "nosniff",
+    },
+  });
+}
+
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
     status,
@@ -469,6 +543,129 @@ function jsonResponse(body, status = 200) {
       "cache-control": "no-store",
     },
   });
+}
+
+function tokenAdminPage() {
+  return `<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>mysub Token Admin</title>
+  <style>
+    :root { color-scheme: light dark; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body { margin: 0; background: #f6f7f9; color: #1f2937; }
+    main { max-width: 760px; margin: 0 auto; padding: 32px 18px; }
+    h1 { font-size: 24px; margin: 0 0 18px; }
+    section { background: #fff; border: 1px solid #d9dee7; border-radius: 8px; padding: 18px; margin-bottom: 16px; }
+    label { display: block; font-size: 13px; font-weight: 650; margin-bottom: 8px; }
+    input { box-sizing: border-box; width: 100%; min-height: 40px; border: 1px solid #c7ceda; border-radius: 6px; padding: 8px 10px; font: inherit; background: #fff; color: inherit; }
+    button { min-height: 38px; border: 1px solid #1f2937; border-radius: 6px; padding: 0 12px; font: inherit; background: #1f2937; color: #fff; cursor: pointer; }
+    button.secondary { background: #fff; color: #1f2937; }
+    button.danger { border-color: #b42318; background: #b42318; }
+    .row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; }
+    .toolbar { display: flex; gap: 10px; flex-wrap: wrap; }
+    .tokens { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 8px; }
+    .token { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; padding: 8px; border: 1px solid #d9dee7; border-radius: 6px; background: #fbfcfe; }
+    code { overflow-wrap: anywhere; }
+    .status { min-height: 22px; font-size: 13px; color: #475467; margin-top: 10px; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #101418; color: #e5e7eb; }
+      section, input, button.secondary, .token { background: #151b22; border-color: #344054; color: #e5e7eb; }
+      button { border-color: #e5e7eb; background: #e5e7eb; color: #111827; }
+      .status { color: #aab4c0; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>mysub Token Admin</h1>
+    <section>
+      <label for="admin">ADMIN_SECRET</label>
+      <div class="row">
+        <input id="admin" type="password" autocomplete="current-password" placeholder="输入管理员密钥">
+        <button id="load">加载</button>
+      </div>
+      <div class="status" id="status"></div>
+    </section>
+    <section>
+      <label for="token">新增 token</label>
+      <div class="row">
+        <input id="token" autocomplete="off" placeholder="例如 router_lin_home">
+        <button id="add">增加</button>
+      </div>
+      <ul class="tokens" id="tokens"></ul>
+    </section>
+  </main>
+  <script>
+    const admin = document.querySelector('#admin');
+    const tokenInput = document.querySelector('#token');
+    const tokensEl = document.querySelector('#tokens');
+    const statusEl = document.querySelector('#status');
+    let tokens = [];
+
+    function setStatus(message) { statusEl.textContent = message; }
+    function adminValue() { return admin.value.trim(); }
+
+    async function api(path, body) {
+      const response = await fetch(path, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ admin: adminValue(), ...body }),
+      });
+      const text = await response.text();
+      if (!response.ok) throw new Error(text || response.statusText);
+      return JSON.parse(text);
+    }
+
+    function render() {
+      tokensEl.innerHTML = '';
+      for (const token of tokens) {
+        const item = document.createElement('li');
+        item.className = 'token';
+        const value = document.createElement('code');
+        value.textContent = token;
+        const copy = document.createElement('button');
+        copy.className = 'secondary';
+        copy.textContent = '复制';
+        copy.onclick = async () => { await navigator.clipboard.writeText(token); setStatus('已复制 ' + token); };
+        const remove = document.createElement('button');
+        remove.className = 'danger';
+        remove.textContent = '删除';
+        remove.onclick = async () => {
+          const result = await api('/admin/token/remove', { token });
+          tokens = result.tokens;
+          render();
+          setStatus('已删除 ' + token);
+        };
+        item.append(value, copy, remove);
+        tokensEl.append(item);
+      }
+      if (tokens.length === 0) setStatus('当前没有 token；空白名单表示不限制非空 token。');
+    }
+
+    document.querySelector('#load').onclick = async () => {
+      const response = await fetch('/admin/config?admin=' + encodeURIComponent(adminValue()));
+      const text = await response.text();
+      if (!response.ok) { setStatus(text); return; }
+      const config = JSON.parse(text);
+      tokens = String(config.ALLOWED_TOKENS || '').split(',').map(item => item.trim()).filter(Boolean);
+      render();
+      setStatus('已加载 ' + tokens.length + ' 个 token');
+    };
+
+    document.querySelector('#add').onclick = async () => {
+      const token = tokenInput.value.trim();
+      if (!token) { setStatus('请输入 token'); return; }
+      const result = await api('/admin/token/add', { token });
+      tokens = result.tokens;
+      tokenInput.value = '';
+      render();
+      setStatus('已增加 ' + token);
+    };
+  </script>
+</body>
+</html>`;
 }
 
 function textResponse(body, status = 200) {
