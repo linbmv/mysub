@@ -334,7 +334,24 @@ async function proxyUpstream(target, request) {
     cf: { cacheTtl: 0, cacheEverything: false },
   });
 
-  return upstream;
+  const body = await upstream.arrayBuffer();
+  const headers = cleanProxyHeaders(upstream.headers);
+
+  return new Response(body, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers,
+  });
+}
+
+function cleanProxyHeaders(upstreamHeaders) {
+  const headers = new Headers(upstreamHeaders);
+  headers.delete("content-length");
+  headers.delete("content-encoding");
+  headers.delete("transfer-encoding");
+  headers.delete("set-cookie");
+  headers.set("cache-control", "no-store");
+  return headers;
 }
 
 async function settings(env) {
