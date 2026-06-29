@@ -47,13 +47,13 @@ async function routeRequest(request, env) {
   if (request.method === "GET" && path === "/rules/home-secret") {
     requireToken(url, env);
     const config = await loadConfig(env);
-    return proxyText(config.HOME_SECRET_RULE_URL, request);
+    return proxyTextWithFallback(config.HOME_SECRET_RULE_URL, request, env, "rule:home-secret");
   }
 
   if (request.method === "GET" && path === "/rules/sensitive") {
     requireToken(url, env);
     const config = await loadConfig(env);
-    return proxyText(config.SENSITIVE_RULE_URL, request);
+    return proxyTextWithFallback(config.SENSITIVE_RULE_URL, request, env, "rule:sensitive");
   }
 
   if (request.method === "POST" && path === "/admin/update-template") {
@@ -285,6 +285,43 @@ async function proxyText(target, request) {
   headers.set("cache-control", "no-store");
   headers.delete("set-cookie");
   return new Response(upstream.body, { status: upstream.status, headers });
+}
+
+async function proxyTextWithFallback(target, request, env, kvKey) {
+  try {
+    target = requiredEnv(target, "target url");
+    const upstream = await fetch(target, {
+      method: "GET",
+      headers: forwardHeaders(request.headers),
+      cf: { cacheTtl: 0, cacheEverything: false },
+      signal: AbortSignal.timeout(5000), // 5s timeout
+    });
+
+    if (upstream.ok) {
+      const text = await upstream.text();
+      // Cache to KV for fallback
+      await env.SUB_KV.put(kvKey, text, { expirationTtl: 86400 });
+
+      const headers = new Headers();
+      headers.set("cache-control", "no-store");
+      headers.set("content-type", "text/plain; charset=utf-8");
+      return new Response(text, { status: 200, headers });
+    }
+  } catch (e) {
+    console.error("Upstream fetch failed, trying KV fallback:", e.message);
+  }
+
+  // Fallback to KV
+  const cached = await env.SUB_KV.get(kvKey);
+  if (cached) {
+    const headers = new Headers();
+    headers.set("cache-control", "no-store");
+    headers.set("content-type", "text/plain; charset=utf-8");
+    headers.set("x-fallback", "true");
+    return new Response(cached, { status: 200, headers });
+  }
+
+  return textResponse("Rule source unavailable and no cache", 502);
 }
 
 function requireToken(url, env) {
