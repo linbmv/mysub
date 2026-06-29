@@ -3,6 +3,7 @@ const TEMPLATE_KEYS = {
   shadowrocket: "config:template:shadowrocket",
 };
 
+const SETTINGS_KEY = "config:settings";
 const DEFAULT_TYPE = "clash";
 
 export default {
@@ -28,23 +29,27 @@ async function routeRequest(request, env) {
   }
 
   if (request.method === "GET" && path === "/main") {
-    requireToken(url, env);
-    return proxyUpstream(env.MAIN_SUB_URL, request);
+    await checkToken(url, env);
+    const config = await settings(env);
+    return proxyUpstream(config.MAIN_SUB_URL, request);
   }
 
   if (request.method === "GET" && path === "/bootstrap") {
-    requireToken(url, env);
-    return proxyUpstream(env.BOOTSTRAP_SUB_URL, request);
+    await checkToken(url, env);
+    const config = await settings(env);
+    return proxyUpstream(config.BOOTSTRAP_SUB_URL, request);
   }
 
   if (request.method === "GET" && path === "/rules/home-secret") {
-    requireToken(url, env);
-    return proxyUpstream(env.HOME_SECRET_RULE_URL, request);
+    await checkToken(url, env);
+    const config = await settings(env);
+    return proxyUpstream(config.HOME_SECRET_RULE_URL, request);
   }
 
   if (request.method === "GET" && path === "/rules/sensitive") {
-    requireToken(url, env);
-    return proxyUpstream(env.SENSITIVE_RULE_URL, request);
+    await checkToken(url, env);
+    const config = await settings(env);
+    return proxyUpstream(config.SENSITIVE_RULE_URL, request);
   }
 
   if (request.method === "POST" && path === "/admin/update-template") {
@@ -61,6 +66,15 @@ async function routeRequest(request, env) {
     return jsonResponse({ templates: Object.keys(TEMPLATE_KEYS) });
   }
 
+  if (request.method === "POST" && path === "/admin/config") {
+    return updateConfig(request, env);
+  }
+
+  if (request.method === "GET" && path === "/admin/config") {
+    requireAdmin(url.searchParams.get("admin"), env);
+    return jsonResponse(await settings(env));
+  }
+
   return textResponse("Not Found", 404);
 }
 
@@ -75,32 +89,33 @@ async function getTemplate(url, env, adminOnly) {
 }
 
 async function getConfig(url, env) {
-  const token = requireToken(url, env);
+  const token = await checkToken(url, env);
   const type = templateType(url);
   const template = await env.SUB_KV.get(TEMPLATE_KEYS[type]);
   if (!template) {
     return textResponse(`Config template is not configured: ${type}`, 500);
   }
 
-  const baseURL = String(env.PUBLIC_BASE_URL || url.origin).replace(/\/$/, "");
+  const config = await settings(env);
+  const baseURL = String(config.PUBLIC_BASE_URL || url.origin).replace(/\/$/, "");
   let body = template
     .replaceAll("BASE_URL", baseURL)
     .replaceAll("DEVICE_TOKEN", token);
 
   if (type === "shadowrocket") {
-    body = await injectShadowrocketMainSub(body, env);
+    body = await injectShadowrocketMainSub(body, config);
   }
 
   return configResponse(body, type, true);
 }
 
-async function injectShadowrocketMainSub(config, env) {
-  if (!config.includes("MAIN_SUB_PROXIES")) {
-    return config;
+async function injectShadowrocketMainSub(template, config) {
+  if (!template.includes("MAIN_SUB_PROXIES")) {
+    return template;
   }
 
-  const proxies = await fetchProxyURIList(env.MAIN_SUB_URL);
-  return config.replaceAll("MAIN_SUB_PROXIES", proxies || "# MAIN_SUB_URL returned no supported proxy lines");
+  const proxies = await fetchProxyURIList(config.MAIN_SUB_URL);
+  return template.replaceAll("MAIN_SUB_PROXIES", proxies || "# MAIN_SUB_URL returned no supported proxy lines");
 }
 
 async function fetchProxyURIList(target) {
@@ -180,6 +195,23 @@ async function updateTemplate(request, env) {
   return jsonResponse({ ok: true, type, bytes: new TextEncoder().encode(template).length });
 }
 
+async function updateConfig(request, env) {
+  const body = await request.json();
+  requireAdmin(body.admin, env);
+
+  const config = {
+    MAIN_SUB_URL: stringValue(body.MAIN_SUB_URL),
+    BOOTSTRAP_SUB_URL: stringValue(body.BOOTSTRAP_SUB_URL),
+    HOME_SECRET_RULE_URL: stringValue(body.HOME_SECRET_RULE_URL),
+    SENSITIVE_RULE_URL: stringValue(body.SENSITIVE_RULE_URL),
+    ALLOWED_TOKENS: stringValue(body.ALLOWED_TOKENS),
+    PUBLIC_BASE_URL: stringValue(body.PUBLIC_BASE_URL),
+  };
+
+  await env.SUB_KV.put(SETTINGS_KEY, JSON.stringify(config, null, 2));
+  return jsonResponse({ ok: true });
+}
+
 async function proxyUpstream(target, request) {
   const upstream = await fetch(requiredEnv(target, "target url"), {
     method: "GET",
@@ -189,6 +221,38 @@ async function proxyUpstream(target, request) {
   });
 
   return upstream;
+}
+
+async function settings(env) {
+  let stored = {};
+  const raw = await env.SUB_KV.get(SETTINGS_KEY);
+  if (raw) {
+    stored = JSON.parse(raw);
+  }
+
+  return {
+    MAIN_SUB_URL: env.MAIN_SUB_URL || stored.MAIN_SUB_URL || "",
+    BOOTSTRAP_SUB_URL: env.BOOTSTRAP_SUB_URL || stored.BOOTSTRAP_SUB_URL || "",
+    HOME_SECRET_RULE_URL: env.HOME_SECRET_RULE_URL || stored.HOME_SECRET_RULE_URL || "",
+    SENSITIVE_RULE_URL: env.SENSITIVE_RULE_URL || stored.SENSITIVE_RULE_URL || "",
+    ALLOWED_TOKENS: env.ALLOWED_TOKENS || stored.ALLOWED_TOKENS || "",
+    PUBLIC_BASE_URL: env.PUBLIC_BASE_URL || stored.PUBLIC_BASE_URL || "",
+  };
+}
+
+async function checkToken(url, env) {
+  const token = url.searchParams.get("token") || "";
+  if (!token) {
+    throw new HttpError("missing token", 401);
+  }
+
+  const config = await settings(env);
+  const allowedTokens = parseCSV(config.ALLOWED_TOKENS);
+  if (allowedTokens.length > 0 && !allowedTokens.includes(token)) {
+    throw new HttpError("invalid token", 403);
+  }
+
+  return token;
 }
 
 function requireToken(url, env) {
