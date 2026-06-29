@@ -80,6 +80,10 @@ async function routeRequest(request, env) {
     return jsonResponse(config);
   }
 
+  if (request.method === "POST" && path === "/admin/upload-rule") {
+    return uploadRule(request, env);
+  }
+
   return textResponse("Not Found", 404);
 }
 
@@ -271,6 +275,35 @@ async function updateConfig(request, env) {
 
   await env.SUB_KV.put(CONFIG_KEY, JSON.stringify(config, null, 2));
   return jsonResponse({ ok: true, config });
+}
+
+async function uploadRule(request, env) {
+  const contentType = request.headers.get("content-type") || "";
+  let admin, name, content;
+
+  if (contentType.includes("multipart/form-data")) {
+    const form = await request.formData();
+    admin = stringValue(form.get("admin"));
+    name = stringValue(form.get("name"));
+    content = await formFileOrText(form.get("content"));
+  } else if (contentType.includes("application/json")) {
+    const body = await request.json();
+    admin = stringValue(body.admin);
+    name = stringValue(body.name);
+    content = stringValue(body.content);
+  } else {
+    return textResponse("Content-Type must be multipart/form-data or application/json", 400);
+  }
+
+  requireAdmin(admin, env);
+
+  if (!name || !content) {
+    return textResponse("name and content are required", 400);
+  }
+
+  const kvKey = `rule:${name}`;
+  await env.SUB_KV.put(kvKey, content);
+  return jsonResponse({ ok: true, name, kvKey, bytes: new TextEncoder().encode(content).length });
 }
 
 async function proxyText(target, request) {
