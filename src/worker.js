@@ -35,13 +35,13 @@ async function routeRequest(request, env) {
   if (request.method === "GET" && path === "/main") {
     requireToken(url, env);
     const config = await loadConfig(env);
-    return convertToClashProvider(config.MAIN_SUB_URL, request);
+    return proxyText(config.MAIN_SUB_URL, request);
   }
 
   if (request.method === "GET" && path === "/bootstrap") {
     requireToken(url, env);
     const config = await loadConfig(env);
-    return convertToClashProvider(config.BOOTSTRAP_SUB_URL, request);
+    return proxyText(config.BOOTSTRAP_SUB_URL, request);
   }
 
   if (request.method === "GET" && path === "/rules/home-secret") {
@@ -479,6 +479,10 @@ async function convertToClashProvider(target, request) {
     const headers = new Headers();
     headers.set("content-type", "text/yaml; charset=utf-8");
     headers.set("cache-control", "no-store");
+
+    // Don't set content-encoding here - let Cloudflare handle compression automatically
+    // Cloudflare Workers automatically compresses responses if Accept-Encoding header is present
+
     return new Response(yaml, { status: 200, headers });
   } catch (error) {
     console.error("convertToClashProvider error:", error);
