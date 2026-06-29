@@ -123,7 +123,7 @@ proxy-providers:
     url: BASE_URL/main?token=DEVICE_TOKEN
     path: "./providers/main.yaml"
     interval: 43200
-    proxy: Updater
+    proxy: DIRECT
     health-check:
       enable: true
       url: https://www.gstatic.com/generate_204
@@ -158,7 +158,7 @@ rule-providers:
     url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/WeChat/WeChat.list
     path: ./rules/wechat.list
     interval: 86400
-    proxy: Updater
+    proxy: DIRECT
 
   TencentQQ:
     type: http
@@ -167,7 +167,7 @@ rule-providers:
     url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/TencentQQ/TencentQQ.list
     path: ./rules/tencentqq.list
     interval: 86400
-    proxy: Updater
+    proxy: DIRECT
 
   AdvertisingLite:
     type: http
@@ -176,7 +176,7 @@ rule-providers:
     url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/AdvertisingLite/AdvertisingLite.list
     path: ./rules/advertising-lite.list
     interval: 86400
-    proxy: Updater
+    proxy: DIRECT
 
   OpenAI:
     type: http
@@ -185,7 +185,7 @@ rule-providers:
     url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/OpenAI/OpenAI.list
     path: ./rules/openai.list
     interval: 86400
-    proxy: Updater
+    proxy: DIRECT
 
   ChinaMax:
     type: http
@@ -194,7 +194,7 @@ rule-providers:
     url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/ChinaMax/ChinaMax.list
     path: ./rules/china-max.list
     interval: 86400
-    proxy: Updater
+    proxy: DIRECT
 
   YouTube:
     type: http
@@ -203,7 +203,7 @@ rule-providers:
     url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/YouTube/YouTube.list
     path: ./rules/youtube.list
     interval: 86400
-    proxy: Updater
+    proxy: DIRECT
 
   Netflix:
     type: http
@@ -212,7 +212,7 @@ rule-providers:
     url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/Netflix/Netflix.list
     path: ./rules/netflix.list
     interval: 86400
-    proxy: Updater
+    proxy: DIRECT
 
   Disney:
     type: http
@@ -221,7 +221,7 @@ rule-providers:
     url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/Disney/Disney.list
     path: ./rules/disney.list
     interval: 86400
-    proxy: Updater
+    proxy: DIRECT
 
   TikTok:
     type: http
@@ -230,7 +230,7 @@ rule-providers:
     url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/TikTok/TikTok.list
     path: ./rules/tiktok.list
     interval: 86400
-    proxy: Updater
+    proxy: DIRECT
 
   Spotify:
     type: http
@@ -239,7 +239,7 @@ rule-providers:
     url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/Spotify/Spotify.list
     path: ./rules/spotify.list
     interval: 86400
-    proxy: Updater
+    proxy: DIRECT
 
   Apple:
     type: http
@@ -248,7 +248,7 @@ rule-providers:
     url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/Apple/Apple.list
     path: ./rules/apple.list
     interval: 86400
-    proxy: Updater
+    proxy: DIRECT
 
   Global:
     type: http
@@ -257,7 +257,7 @@ rule-providers:
     url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/Global/Global.list
     path: ./rules/global.list
     interval: 86400
-    proxy: Updater
+    proxy: DIRECT
 
 proxy-groups:
   - name: Updater
