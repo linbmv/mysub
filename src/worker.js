@@ -83,11 +83,70 @@ async function getConfig(url, env) {
   }
 
   const baseURL = String(env.PUBLIC_BASE_URL || url.origin).replace(/\/$/, "");
-  const body = template
+  let body = template
     .replaceAll("BASE_URL", baseURL)
     .replaceAll("DEVICE_TOKEN", token);
 
+  if (type === "shadowrocket") {
+    body = await injectShadowrocketMainSub(body, env);
+  }
+
   return configResponse(body, type, true);
+}
+
+async function injectShadowrocketMainSub(config, env) {
+  if (!config.includes("MAIN_SUB_PROXIES")) {
+    return config;
+  }
+
+  const proxies = await fetchProxyURIList(env.MAIN_SUB_URL);
+  return config.replaceAll("MAIN_SUB_PROXIES", proxies || "# MAIN_SUB_URL returned no supported proxy lines");
+}
+
+async function fetchProxyURIList(target) {
+  const upstream = await fetch(requiredEnv(target, "MAIN_SUB_URL"), {
+    method: "GET",
+    headers: { accept: "text/plain,*/*" },
+    redirect: "follow",
+    cf: { cacheTtl: 0, cacheEverything: false },
+  });
+
+  if (!upstream.ok) {
+    throw new HttpError(`MAIN_SUB_URL fetch failed: ${upstream.status}`, 502);
+  }
+
+  const text = await upstream.text();
+  return extractProxyURILines(text).join("\n");
+}
+
+function extractProxyURILines(text) {
+  return maybeBase64Decode(text)
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(isProxyURI);
+}
+
+function maybeBase64Decode(text) {
+  const compact = text.trim().replace(/\s+/g, "");
+  if (!compact || isProxyURI(text.trim())) {
+    return text;
+  }
+
+  try {
+    const normalized = compact.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    const decoded = atob(padded);
+    if (/^(ss|ssr|vmess|vless|trojan|hysteria2|hy2|tuic|wireguard):\/\//im.test(decoded)) {
+      return decoded;
+    }
+  } catch (_) {
+  }
+
+  return text;
+}
+
+function isProxyURI(line) {
+  return /^(ss|ssr|vmess|vless|trojan|hysteria2|hy2|tuic|wireguard):\/\//i.test(line);
 }
 
 async function updateTemplate(request, env) {
@@ -190,7 +249,7 @@ function stringValue(value) {
 
 function forwardHeaders(headers) {
   const next = new Headers();
-  for (const name of ["accept", "accept-encoding", "user-agent"]) {
+  for (const name of ["accept", "user-agent"]) {
     const value = headers.get(name);
     if (value) {
       next.set(name, value);
