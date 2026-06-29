@@ -47,13 +47,13 @@ async function routeRequest(request, env) {
   if (request.method === "GET" && path === "/rules/home-secret") {
     requireToken(url, env);
     const config = await loadConfig(env);
-    return proxyTextWithFallback(config.HOME_SECRET_RULE_URL, request, env, "rule:home-secret");
+    return proxyText(config.HOME_SECRET_RULE_URL, request);
   }
 
   if (request.method === "GET" && path === "/rules/sensitive") {
     requireToken(url, env);
     const config = await loadConfig(env);
-    return proxyTextWithFallback(config.SENSITIVE_RULE_URL, request, env, "rule:sensitive");
+    return proxyText(config.SENSITIVE_RULE_URL, request);
   }
 
   if (request.method === "POST" && path === "/admin/update-template") {
