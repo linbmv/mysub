@@ -314,10 +314,12 @@ async function proxyText(target, request) {
     cf: { cacheTtl: 0, cacheEverything: false },
   });
 
-  const headers = new Headers(upstream.headers);
-  headers.set("cache-control", "no-store");
-  headers.delete("set-cookie");
-  return new Response(upstream.body, { status: upstream.status, headers });
+  // Return upstream response directly - don't modify headers that affect body framing
+  // Modifying content-length/content-encoding while streaming body causes EOF
+  return new Response(upstream.body, {
+    status: upstream.status,
+    headers: upstream.headers,
+  });
 }
 
 async function proxyTextWithFallback(target, request, env, kvKey) {
