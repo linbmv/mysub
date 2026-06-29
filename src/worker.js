@@ -509,6 +509,12 @@ function buildClashYAMLFromObjects(proxies) {
     return "proxies: []";
   }
 
+  // Limit to 800 proxies to avoid Clash timeout/memory issues
+  const MAX_PROXIES = 800;
+  if (proxies.length > MAX_PROXIES) {
+    proxies = proxies.slice(0, MAX_PROXIES);
+  }
+
   // Build YAML manually to avoid external dependencies
   let yaml = "proxies:\n";
   for (const proxy of proxies) {
