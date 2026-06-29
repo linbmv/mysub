@@ -106,13 +106,13 @@ sniffer:
 proxy-providers:
   Bootstrap:
     type: http
-    url: BASE_URL/bootstrap?token=DEVICE_TOKEN
+    url: "BASE_URL/bootstrap?token=DEVICE_TOKEN"
     path: "./providers/bootstrap.yaml"
     interval: 3600
     proxy: DIRECT
     health-check:
       enable: true
-      url: https://www.gstatic.com/generate_204
+      url: "https://www.gstatic.com/generate_204"
       interval: 300
       timeout: 5
       expected-status: 204
@@ -120,13 +120,13 @@ proxy-providers:
 
   Main:
     type: http
-    url: BASE_URL/main?token=DEVICE_TOKEN
+    url: "BASE_URL/main?token=DEVICE_TOKEN"
     path: "./providers/main.yaml"
     interval: 43200
     proxy: DIRECT
     health-check:
       enable: true
-      url: https://www.gstatic.com/generate_204
+      url: "https://www.gstatic.com/generate_204"
       interval: 600
       timeout: 5
       expected-status: 204
@@ -137,7 +137,7 @@ rule-providers:
     type: http
     behavior: classical
     format: text
-    url: BASE_URL/rules/home-secret?token=DEVICE_TOKEN
+    url: "BASE_URL/rules/home-secret?token=DEVICE_TOKEN"
     path: ./rules/home-secret.list
     interval: 86400
     proxy: DIRECT
@@ -146,7 +146,7 @@ rule-providers:
     type: http
     behavior: classical
     format: text
-    url: BASE_URL/rules/sensitive?token=DEVICE_TOKEN
+    url: "BASE_URL/rules/sensitive?token=DEVICE_TOKEN"
     path: ./rules/sensitive.list
     interval: 86400
     proxy: DIRECT
@@ -155,7 +155,7 @@ rule-providers:
     type: http
     behavior: classical
     format: text
-    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/WeChat/WeChat.list
+    url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/WeChat/WeChat.list"
     path: ./rules/wechat.list
     interval: 86400
     proxy: DIRECT
@@ -164,7 +164,7 @@ rule-providers:
     type: http
     behavior: classical
     format: text
-    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/TencentQQ/TencentQQ.list
+    url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/TencentQQ/TencentQQ.list"
     path: ./rules/tencentqq.list
     interval: 86400
     proxy: DIRECT
@@ -173,7 +173,7 @@ rule-providers:
     type: http
     behavior: classical
     format: text
-    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/AdvertisingLite/AdvertisingLite.list
+    url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/AdvertisingLite/AdvertisingLite.list"
     path: ./rules/advertising-lite.list
     interval: 86400
     proxy: DIRECT
@@ -182,7 +182,7 @@ rule-providers:
     type: http
     behavior: classical
     format: text
-    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/OpenAI/OpenAI.list
+    url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/OpenAI/OpenAI.list"
     path: ./rules/openai.list
     interval: 86400
     proxy: DIRECT
@@ -191,7 +191,7 @@ rule-providers:
     type: http
     behavior: classical
     format: text
-    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/ChinaMax/ChinaMax.list
+    url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/ChinaMax/ChinaMax.list"
     path: ./rules/china-max.list
     interval: 86400
     proxy: DIRECT
@@ -200,7 +200,7 @@ rule-providers:
     type: http
     behavior: classical
     format: text
-    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/YouTube/YouTube.list
+    url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/YouTube/YouTube.list"
     path: ./rules/youtube.list
     interval: 86400
     proxy: DIRECT
@@ -209,7 +209,7 @@ rule-providers:
     type: http
     behavior: classical
     format: text
-    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/Netflix/Netflix.list
+    url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/Netflix/Netflix.list"
     path: ./rules/netflix.list
     interval: 86400
     proxy: DIRECT
@@ -218,7 +218,7 @@ rule-providers:
     type: http
     behavior: classical
     format: text
-    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/Disney/Disney.list
+    url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/Disney/Disney.list"
     path: ./rules/disney.list
     interval: 86400
     proxy: DIRECT
@@ -227,7 +227,7 @@ rule-providers:
     type: http
     behavior: classical
     format: text
-    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/TikTok/TikTok.list
+    url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/TikTok/TikTok.list"
     path: ./rules/tiktok.list
     interval: 86400
     proxy: DIRECT
@@ -236,7 +236,7 @@ rule-providers:
     type: http
     behavior: classical
     format: text
-    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/Spotify/Spotify.list
+    url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/Spotify/Spotify.list"
     path: ./rules/spotify.list
     interval: 86400
     proxy: DIRECT
@@ -245,7 +245,7 @@ rule-providers:
     type: http
     behavior: classical
     format: text
-    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/Apple/Apple.list
+    url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/Apple/Apple.list"
     path: ./rules/apple.list
     interval: 86400
     proxy: DIRECT
@@ -254,7 +254,7 @@ rule-providers:
     type: http
     behavior: classical
     format: text
-    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/Global/Global.list
+    url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/Global/Global.list"
     path: ./rules/global.list
     interval: 86400
     proxy: DIRECT
@@ -266,7 +266,7 @@ proxy-groups:
       - Bootstrap
     proxies:
       - DIRECT
-    url: https://www.gstatic.com/generate_204
+    url: "https://www.gstatic.com/generate_204"
     interval: 300
     tolerance: 100
     hidden: true
@@ -307,7 +307,7 @@ proxy-groups:
       - Bootstrap
     filter: "✈️EXIT"
     exclude-filter: "(Home|WARP|免费)"
-    url: https://www.gstatic.com/generate_204
+    url: "https://www.gstatic.com/generate_204"
     interval: 600
     tolerance: 150
     timeout: 8
@@ -319,7 +319,7 @@ proxy-groups:
       - Bootstrap
     filter: "✈️EXIT"
     exclude-filter: "(Home|WARP|免费)"
-    url: https://www.youtube.com/generate_204
+    url: "https://www.youtube.com/generate_204"
     interval: 300
     tolerance: 80
     timeout: 8
@@ -331,7 +331,7 @@ proxy-groups:
       - Bootstrap
     filter: "."
     exclude-filter: "(✈️EXIT|免费)"
-    url: https://www.gstatic.com/generate_204
+    url: "https://www.gstatic.com/generate_204"
     interval: 900
     tolerance: 200
     timeout: 10
@@ -344,7 +344,7 @@ proxy-groups:
       - Bootstrap
     filter: "免费"
     exclude-filter: "✈️EXIT"
-    url: https://www.gstatic.com/generate_204
+    url: "https://www.gstatic.com/generate_204"
     interval: 1200
     tolerance: 300
     timeout: 12
@@ -357,7 +357,7 @@ proxy-groups:
       - Bootstrap
     filter: "✈️EXIT"
     exclude-filter: "(Home|WARP|免费)"
-    url: https://www.gstatic.com/generate_204
+    url: "https://www.gstatic.com/generate_204"
     interval: 600
     timeout: 8
     lazy: true
@@ -371,7 +371,7 @@ proxy-groups:
       - Bootstrap
     filter: "✈️EXIT"
     exclude-filter: "(Home|WARP|免费)"
-    url: https://www.gstatic.com/generate_204
+    url: "https://www.gstatic.com/generate_204"
     interval: 900
     timeout: 10
     lazy: true
@@ -384,7 +384,7 @@ proxy-groups:
       - Main
       - Bootstrap
     filter: "(sgp|SGP|Singapore|新加坡).*✈️EXIT|✈️EXIT.*(sgp|SGP|Singapore|新加坡)"
-    url: https://www.gstatic.com/generate_204
+    url: "https://www.gstatic.com/generate_204"
     interval: 600
     timeout: 10
     lazy: true
@@ -396,7 +396,7 @@ proxy-groups:
       - Main
       - Bootstrap
     filter: "(sgp|SGP|Singapore|新加坡).*✈️EXIT|✈️EXIT.*(sgp|SGP|Singapore|新加坡)"
-    url: https://www.gstatic.com/generate_204
+    url: "https://www.gstatic.com/generate_204"
     interval: 900
     timeout: 12
     lazy: true
@@ -408,7 +408,7 @@ proxy-groups:
       - Main
       - Bootstrap
     filter: "(usa|USA|United States|美国).*✈️EXIT|✈️EXIT.*(usa|USA|United States|美国)"
-    url: https://www.gstatic.com/generate_204
+    url: "https://www.gstatic.com/generate_204"
     interval: 900
     timeout: 10
     lazy: true
@@ -420,7 +420,7 @@ proxy-groups:
       - Main
       - Bootstrap
     filter: "(usa|USA|United States|美国).*✈️EXIT|✈️EXIT.*(usa|USA|United States|美国)"
-    url: https://www.gstatic.com/generate_204
+    url: "https://www.gstatic.com/generate_204"
     interval: 1200
     timeout: 12
     lazy: true
@@ -432,7 +432,7 @@ proxy-groups:
       - Main
       - Bootstrap
     filter: "(Home.*✈️EXIT|✈️EXIT.*Home)"
-    url: https://www.gstatic.com/generate_204
+    url: "https://www.gstatic.com/generate_204"
     interval: 900
     timeout: 10
     lazy: true
@@ -444,7 +444,7 @@ proxy-groups:
       - Main
       - Bootstrap
     filter: "(Home.*✈️EXIT|✈️EXIT.*Home)"
-    url: https://www.gstatic.com/generate_204
+    url: "https://www.gstatic.com/generate_204"
     interval: 1200
     timeout: 12
     lazy: true
@@ -457,7 +457,7 @@ proxy-groups:
       - Bootstrap
     filter: "."
     exclude-filter: "(✈️EXIT|免费)"
-    url: https://www.gstatic.com/generate_204
+    url: "https://www.gstatic.com/generate_204"
     interval: 900
     timeout: 10
     lazy: true
@@ -470,7 +470,7 @@ proxy-groups:
       - 🔗 订阅前置自建出口
       - 🆓 免费前置自建出口
       - EmergencySubExit
-    url: https://www.gstatic.com/generate_204
+    url: "https://www.gstatic.com/generate_204"
     interval: 600
     timeout: 8
     lazy: true
@@ -482,7 +482,7 @@ proxy-groups:
       - 🇸🇬 SGP节点池
       - 🔐 订阅前置SGP出口
       - 🆓 免费前置SGP出口
-    url: https://www.gstatic.com/generate_204
+    url: "https://www.gstatic.com/generate_204"
     interval: 600
     timeout: 10
     lazy: true
@@ -495,7 +495,7 @@ proxy-groups:
       - 🎬 订阅前置USA出口
       - 🆓 免费前置USA出口
       - EmergencySubExit
-    url: https://www.gstatic.com/generate_204
+    url: "https://www.gstatic.com/generate_204"
     interval: 900
     timeout: 10
     lazy: true
@@ -508,7 +508,7 @@ proxy-groups:
       - 🔗 订阅前置自建出口
       - 🆓 免费前置自建出口
       - EmergencySubExit
-    url: https://www.youtube.com/generate_204
+    url: "https://www.youtube.com/generate_204"
     interval: 300
     timeout: 8
     lazy: true
@@ -520,7 +520,7 @@ proxy-groups:
       - 🏠 Home节点池
       - 🏠 订阅前置Home出口
       - 🆓 免费前置Home出口
-    url: https://www.gstatic.com/generate_204
+    url: "https://www.gstatic.com/generate_204"
     interval: 900
     timeout: 10
     lazy: true
